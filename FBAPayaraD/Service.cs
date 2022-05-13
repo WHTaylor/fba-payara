@@ -26,7 +26,7 @@ namespace FBAPayaraD
                 { Service.Schedule, Path.Combine(
                     "Schedule", "SchedulePackage", "war") },
                 { Service.Users, Path.Combine(
-                    "Users", "users", "users-webservice") },
+                    "Users", "users", "users-services-war") },
                 { Service.Visits, Path.Combine(
                     "Visits", "VisitsPackage", "visits-war") },
                 { Service.ProposalLookup, Path.Combine(

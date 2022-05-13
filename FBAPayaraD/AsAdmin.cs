@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace FBAPayaraD
 {
@@ -38,22 +39,17 @@ namespace FBAPayaraD
             _asAdminProc.StandardOutput.Read(buf, 0, _prompt.Count);
         }
 
-        public (List<string>, List<string>) ListApplications()
+        public async Task<CommandOutput> ListApplications()
         {
-            _asAdminProc.StandardInput.WriteLine("list-applications");
-            var output = ReadToPrompt()
-                .Select(line => line.Split().First())
-                .ToList();
-            var errs = output.Count > 0
-                ? new()
-                : ReadErrors();
-            return (output, errs);
+            await _asAdminProc.StandardInput.WriteLineAsync("list-applications");
+            var output = await GetCommandOutput();
+            return output.Map(line => line.Split().First());
         }
 
         private readonly List<char> _prompt = new()
             { 'a', 's', 'a', 'd', 'm', 'i', 'n', '>', ' ' };
 
-        private List<string> ReadToPrompt()
+        private async Task<List<string>> ReadToPrompt()
         {
             var stdout = _asAdminProc.StandardOutput;
             var lines = new List<string>();
@@ -62,7 +58,7 @@ namespace FBAPayaraD
             {
                 if (stdout.Peek() != -1 && stdout.Peek() != 'a')
                 {
-                    lines.Add(stdout.ReadLine());
+                    lines.Add(await stdout.ReadLineAsync());
                 }
                 // If the line starts with 'a', it might be the prompt.
                 // Because the prompt doesn't end with a newline, we need to
@@ -103,26 +99,35 @@ namespace FBAPayaraD
             return lines;
         }
 
-        public (List<string>, List<string>) Deploy(string war)
+        public async Task<CommandOutput> Deploy(string war)
         {
-            _asAdminProc.StandardInput.WriteLine($"deploy {war}");
-            var output = ReadToPrompt();
-            var errs = ReadErrors();
-            return (output, errs);
+            Console.WriteLine($"Deploying {war}");
+            await _asAdminProc.StandardInput.WriteLineAsync($"deploy {war}");
+            return await GetCommandOutput();
         }
 
-        public (List<string>, List<string>) Undeploy(string war)
+        public async Task<CommandOutput> Undeploy(string war)
         {
-            _asAdminProc.StandardInput.WriteLine($"undeploy {war}");
-            return (ReadToPrompt(), ReadErrors());
+            Console.WriteLine($"Undeploying {war}");
+            await _asAdminProc.StandardInput.WriteLineAsync($"undeploy {war}");
+            return await GetCommandOutput();
         }
- 
-        private List<string> ReadErrors()
+
+        private async Task<CommandOutput> GetCommandOutput()
+        {
+            Console.WriteLine("Getting output");
+            var output = await ReadToPrompt();
+            return output.Count > 0
+                ? CommandOutput.Success(output)
+                : CommandOutput.Failure(await ReadErrors());
+        }
+
+        private async Task<List<string>> ReadErrors()
         {
             List<string> errs = new();
             while (_asAdminProc.StandardError.Peek() != -1)
             {
-                errs.Add(_asAdminProc.StandardError.ReadLine());
+                errs.Add(await _asAdminProc.StandardError.ReadLineAsync());
             }
 
             return errs;

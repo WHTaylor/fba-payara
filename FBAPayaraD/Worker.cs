@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
@@ -39,64 +38,67 @@ namespace FBAPayaraD
             var input = await reader.ReadLineAsync();
             _logger.LogInformation(input);
 
-            List<string> output = new();
-            List<string> errs;
+            CommandOutput cmdOut;
             try
             {
                 var cmd = Command.Parse(input);
-                (output, errs) = cmd.Type switch
+                cmdOut = cmd.Type switch
                 {
-                    CommandType.List => _asAdmin.ListApplications(),
-                    CommandType.Deploy => Deploy(cmd.Arg),
-                    CommandType.Undeploy => Undeploy(cmd.Arg),
-                    _ => (new List<string> { "Coming Soon" }, new List<string>())
+                    CommandType.List => await _asAdmin.ListApplications(),
+                    CommandType.Deploy => await Deploy(cmd.Arg),
+                    CommandType.Undeploy => await Undeploy(cmd.Arg),
+                    _ => CommandOutput.Success("Coming Soon"),
                 };
             }
             catch (ArgumentException ex)
             {
-                errs = new List<string> { ex.Message };
+                cmdOut = CommandOutput.Failure(ex.Message);
             }
             catch (Exception)
             {
-                errs = new List<string> { "Internal error" };
+                cmdOut = CommandOutput.Failure("Internal error");
             }
 
-            await StreamOutput(server, output, errs);
+            await StreamOutput(server, cmdOut);
         }
 
         private static async Task StreamOutput(
-            Stream server, List<string> output, List<string> errs)
+            Stream server, CommandOutput cmdOut)
         {
             var writer = new StreamWriter(server);
             writer.AutoFlush = true;
 
-            var message = string.Join(
-                Environment.NewLine,
-                errs.Count > 0 ? errs : output);
-            await writer.WriteAsync(message);
+            await writer.WriteAsync(cmdOut.Output);
         }
- 
-        private (List<string>, List<string>) Deploy(string serviceName)
+
+        private async Task<CommandOutput> Deploy(string serviceName)
         {
             if (!ServicesMap.IsServiceName(serviceName))
             {
-                throw new ArgumentException($"{serviceName} is not a known service");
+                throw new ArgumentException(
+                    $"{serviceName} is not a known service");
             }
 
-            return _asAdmin.Deploy(ServicesMap.ServiceWar(serviceName));
+            return await _asAdmin.Deploy(ServicesMap.ServiceWar(serviceName));
         }
- 
-        private (List<string>, List<string>) Undeploy(string serviceName)
+
+        private async Task<CommandOutput> Undeploy(string serviceName)
         {
             if (!ServicesMap.IsServiceName(serviceName))
             {
-                throw new ArgumentException($"{serviceName} is not a known service");
+                throw new ArgumentException(
+                    $"{serviceName} is not a known service");
             }
 
-            var war = _asAdmin.ListApplications().Item1
-                .First((s => s.Contains(serviceName.ToLower())));
+            var listApps = await _asAdmin.ListApplications();
+            if (!listApps.WasSuccess)
+            {
+                return listApps;
+            }
 
-            return _asAdmin.Undeploy(war);
+            var war = listApps.Values
+                .First(a => a.Contains(serviceName.ToLower()));
+            return await _asAdmin.Undeploy(war);
         }
     }
 }

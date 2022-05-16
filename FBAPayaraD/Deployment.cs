@@ -1,17 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using static FBAPayaraD.ServiceExtensions;
 
 namespace FBAPayaraD
 {
-    public class DeployedApp
+    public class Deployment
     {
         public readonly Service service;
         private readonly string version;
         private readonly DateTime? deployDate;
         public string repoBranch;
 
-        public DeployedApp(Service service, string version, DateTime? deployDate, string repoBranch=null)
+        public Deployment(Service service, string version, DateTime? deployDate, string repoBranch=null)
         {
             this.service = service;
             this.version = version;
@@ -29,21 +28,21 @@ namespace FBAPayaraD
             repoBranch ?? "",
         };
 
-        public static DeployedApp Deserialize(string serialized)
+        public static Deployment Deserialize(string serialized)
         {
             var parts = serialized.Split(",");
-            return new DeployedApp(
+            return new Deployment(
                 (Service)Enum.Parse(typeof(Service), parts[0], true),
                 parts[1],
                 DateTime.Parse(parts[2]),
                 parts[3]);
         }
 
-        public static DeployedApp FromWar(string war, DateTime? deployedTime=null)
+        public static Deployment FromWar(string war, DateTime? deployedTime=null)
         {
             var parts = war.Split("-war-");
-            return new DeployedApp(
-                FromWarName(war),
+            return new Deployment(
+                Services.WarToService(war),
                 parts[1],
                 deployedTime);
         }

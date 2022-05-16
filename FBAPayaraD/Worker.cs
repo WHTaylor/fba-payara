@@ -7,7 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using static FBAPayaraD.ServiceExtensions;
 
 namespace FBAPayaraD
 {
@@ -15,7 +14,7 @@ namespace FBAPayaraD
     {
         private readonly ILogger<Worker> _logger;
         private readonly AsAdmin _asAdmin = new();
-        private Dictionary<Service, DeployedApp> _deploymentInfo;
+        private Dictionary<Service, Deployment> _deploymentInfo;
 
         public Worker(ILogger<Worker> logger)
         {
@@ -81,13 +80,13 @@ namespace FBAPayaraD
             }
 
             var deployedApps = appList.Value
-                .ToDictionary(a => a, FromWarName);
+                .ToDictionary(a => a, Services.WarToService);
             var appValues = new List<List<string>>();
             foreach (var (war, service) in deployedApps)
             {
                 var app = _deploymentInfo.ContainsKey(service)
                     ? _deploymentInfo[service]
-                    : DeployedApp.FromWar(war);
+                    : Deployment.FromWar(war);
                 appValues.Add(app.Values());
             }
 
@@ -121,19 +120,19 @@ namespace FBAPayaraD
 
         private async Task<CommandOutput> Deploy(string serviceName)
         {
-            if (!ServicesMap.IsServiceName(serviceName))
+            if (!Services.IsValidName(serviceName))
             {
                 throw new ArgumentException(
                     $"{serviceName} is not a known service");
             }
 
-            var warPath = ServicesMap.ServiceWar(serviceName);
+            var warPath = Services.NameToWar(serviceName);
             var result = await _asAdmin.Deploy(warPath);
-            var repo = ServicesMap.ServiceRepo(serviceName);
+            var repo = Services.NameToRepo(serviceName);
             if (result.Success)
             {
                 var war = new FileInfo(warPath).Name;
-                var deployment = DeployedApp.FromWar(war, DateTime.Now);
+                var deployment = Deployment.FromWar(war, DateTime.Now);
                 deployment.repoBranch = repo.Branch();
                 _deploymentInfo[deployment.service] = deployment;
                 Utils.SaveDeploymentInfo(_deploymentInfo.Values.ToList());
@@ -144,7 +143,7 @@ namespace FBAPayaraD
 
         private async Task<CommandOutput> Undeploy(string serviceName)
         {
-            if (!ServicesMap.IsServiceName(serviceName))
+            if (!Services.IsValidName(serviceName))
             {
                 throw new ArgumentException(
                     $"{serviceName} is not a known service");
@@ -167,7 +166,7 @@ namespace FBAPayaraD
             if (result.Success)
             {
                 var war = new FileInfo(warPath).Name;
-                var deployment = DeployedApp.FromWar(war, DateTime.Now);
+                var deployment = Deployment.FromWar(war, DateTime.Now);
                 _deploymentInfo.Remove(deployment.service);
                 Utils.SaveDeploymentInfo(_deploymentInfo.Values.ToList());
             }

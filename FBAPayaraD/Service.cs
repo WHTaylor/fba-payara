@@ -13,27 +13,7 @@ namespace FBAPayaraD
         ProposalLookup,
     }
 
-    public static class ServiceExtensions
-    {
-        private static readonly Dictionary<string, Service> ServiceNames = new()
-        {
-            { "proposal-lookup", Service.ProposalLookup },
-            { "users-services", Service.Users },
-        };
-
-        public static Service FromWarName(string war)
-        {
-            var parts = war.Split("-war-");
-            if (ServiceNames.ContainsKey(parts[0])) return ServiceNames[parts[0]];
-
-            return (Service)Enum.Parse(typeof(Service), parts[0], true);
-        }
-
-        public static Service FromString(string s)
-            => (Service)Enum.Parse(typeof(Service), s, true);
-    }
-
-    public class ServicesMap
+    public static class Services
     {
         private static readonly string AppsRootDir =
             Path.Combine("C:", "Users", "rop61488", "Documents", "Apps");
@@ -67,9 +47,19 @@ namespace FBAPayaraD
                 },
             };
 
-        public static string ServiceWar(string serviceName)
+        // Services whose war files are named differently to the enum
+        private static readonly Dictionary<string, Service> WarServices = new()
         {
-            var service = (Service)Enum.Parse(typeof(Service), serviceName, true);
+            { "proposal-lookup", Service.ProposalLookup },
+            { "users-services", Service.Users },
+        };
+
+        public static Service NameToService(string s)
+            => (Service)Enum.Parse(typeof(Service), s, true);
+
+        public static string NameToWar(string serviceName)
+        {
+            var service = NameToService(serviceName);
             var targetDir = Path.Join(
                 AppsRootDir,
                 RepoDirectories[service],
@@ -81,13 +71,21 @@ namespace FBAPayaraD
             return wars[0].Replace("\\", "/");
         }
 
-        public static Git ServiceRepo(string serviceName)
+        public static Service WarToService(string war)
         {
-            var service = ServiceExtensions.FromString(serviceName);
-            return new(Path.Join(AppsRootDir, RepoDirectories[service]));
+            var parts = war.Split("-war-");
+            if (WarServices.ContainsKey(parts[0])) return WarServices[parts[0]];
+
+            return NameToService(parts[0]);
         }
 
-        public static bool IsServiceName(string name)
+        public static Git ServiceRepo(Service service) =>
+            new(Path.Join(AppsRootDir, RepoDirectories[service]));
+
+        public static Git NameToRepo(string serviceName) =>
+            ServiceRepo(NameToService(serviceName));
+
+        public static bool IsValidName(string name)
         {
             return Enum.TryParse(typeof(Service), name, true, out _);
         }

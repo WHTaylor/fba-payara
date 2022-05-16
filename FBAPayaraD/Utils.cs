@@ -15,7 +15,7 @@ namespace FBAPayaraD
         private static readonly string SaveFile =
             Path.Join(AppDataDir, "fba-payara", "data");
 
-        public static void SaveDeploymentInfo(List<DeployedApp> apps)
+        public static void SaveDeploymentInfo(List<Deployment> apps)
         {
             Console.WriteLine(SaveFile);
             if (!File.Exists(SaveFile))
@@ -32,12 +32,12 @@ namespace FBAPayaraD
                 apps.Select(app => app.Serialize()).ToArray());
         }
 
-        public static Dictionary<Service, DeployedApp> LoadDeploymentInfo()
+        public static Dictionary<Service, Deployment> LoadDeploymentInfo()
         {
             if (!File.Exists(SaveFile)) return new();
 
             return File.ReadLines(SaveFile)
-                .Select(DeployedApp.Deserialize)
+                .Select(Deployment.Deserialize)
                 .ToDictionary(a => a.service, a => a);
         }
     }

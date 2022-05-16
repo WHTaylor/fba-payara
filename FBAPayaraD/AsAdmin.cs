@@ -46,6 +46,37 @@ namespace FBAPayaraD
             return output.Map(line => line.Split().First());
         }
 
+        public async Task<CommandOutput> Deploy(string war)
+        {
+            Console.WriteLine($"Deploying {war}");
+            await _asAdminProc.StandardInput.WriteLineAsync($"deploy {war}");
+            return await GetCommandOutput();
+        }
+
+        public async Task<CommandOutput> Undeploy(string war)
+        {
+            Console.WriteLine($"Undeploying {war}");
+            await _asAdminProc.StandardInput.WriteLineAsync($"undeploy {war}");
+            return await GetCommandOutput();
+        }
+
+        private async Task<CommandOutput> GetCommandOutput()
+        {
+            var output = await ReadToPrompt();
+            if (output.Count == 0) return CommandOutput.Failure("No output");
+
+            var success = output[^1].Trim().StartsWith("Command")
+                          && output[^1].Trim().EndsWith("successfully.");
+            var returnOutput = output
+                .Take(output.Count - 1)
+                .Select(s => s.Trim())
+                .ToList();
+
+            return success
+                ? CommandOutput.Successful(returnOutput)
+                : CommandOutput.Failure(returnOutput);
+        }
+
         private readonly List<char> _prompt = new()
             { 'a', 's', 'a', 'd', 'm', 'i', 'n', '>', ' ' };
 
@@ -97,37 +128,6 @@ namespace FBAPayaraD
             }
 
             return lines;
-        }
-
-        public async Task<CommandOutput> Deploy(string war)
-        {
-            Console.WriteLine($"Deploying {war}");
-            await _asAdminProc.StandardInput.WriteLineAsync($"deploy {war}");
-            return await GetCommandOutput();
-        }
-
-        public async Task<CommandOutput> Undeploy(string war)
-        {
-            Console.WriteLine($"Undeploying {war}");
-            await _asAdminProc.StandardInput.WriteLineAsync($"undeploy {war}");
-            return await GetCommandOutput();
-        }
-
-        private async Task<CommandOutput> GetCommandOutput()
-        {
-            var output = await ReadToPrompt();
-            if (output.Count == 0) return CommandOutput.Failure("No output");
-
-            var success = output[^1].Trim().StartsWith("Command")
-                          && output[^1].Trim().EndsWith("successfully.");
-            var returnOutput = output
-                .Take(output.Count - 1)
-                .Select(s => s.Trim())
-                .ToList();
-
-            return success
-                ? CommandOutput.Successful(returnOutput)
-                : CommandOutput.Failure(returnOutput);
         }
     }
 }

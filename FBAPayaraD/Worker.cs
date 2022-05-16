@@ -129,10 +129,12 @@ namespace FBAPayaraD
 
             var warPath = ServicesMap.ServiceWar(serviceName);
             var result = await _asAdmin.Deploy(warPath);
+            var repo = ServicesMap.ServiceRepo(serviceName);
             if (result.Success)
             {
                 var war = new FileInfo(warPath).Name;
                 var deployment = DeployedApp.FromWar(war, DateTime.Now);
+                deployment.repoBranch = repo.Branch();
                 _deploymentInfo[deployment.service] = deployment;
                 Utils.SaveDeploymentInfo(_deploymentInfo.Values.ToList());
             }

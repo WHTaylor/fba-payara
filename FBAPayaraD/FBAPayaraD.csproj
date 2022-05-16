@@ -1,12 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
 
     <PropertyGroup>
-        <TargetFramework>net5.0</TargetFramework>
+        <TargetFramework>net6.0</TargetFramework>
         <UserSecretsId>dotnet-fba_payarad-6962F959-1164-4FD9-904B-1546DA496065</UserSecretsId>
         <RootNamespace>fba_payarad</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="GitWrapper" Version="1.0.1" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
     </ItemGroup>
 </Project>

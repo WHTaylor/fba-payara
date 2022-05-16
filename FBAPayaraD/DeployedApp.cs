@@ -9,22 +9,24 @@ namespace FBAPayaraD
         public readonly Service service;
         private readonly string version;
         private readonly DateTime? deployDate;
+        public string repoBranch;
 
-        public DeployedApp(Service service, string version, DateTime? deployDate)
+        public DeployedApp(Service service, string version, DateTime? deployDate, string repoBranch=null)
         {
             this.service = service;
             this.version = version;
             this.deployDate = deployDate;
+            this.repoBranch = repoBranch;
         }
 
-        public string Serialize()
-        {
-            return $"{service},{version},{deployDate:u}";
-        }
+        public string Serialize() => string.Join(",", Values());
 
         public List<string> Values() => new()
         {
-            service.ToString(), version, deployDate?.ToString("u") ?? ""
+            service.ToString(),
+            version,
+            deployDate?.ToString("u") ?? "",
+            repoBranch ?? "",
         };
 
         public static DeployedApp Deserialize(string serialized)
@@ -33,7 +35,8 @@ namespace FBAPayaraD
             return new DeployedApp(
                 (Service)Enum.Parse(typeof(Service), parts[0], true),
                 parts[1],
-                DateTime.Parse(parts[2]));
+                DateTime.Parse(parts[2]),
+                parts[3]);
         }
 
         public static DeployedApp FromWar(string war, DateTime? deployedTime=null)

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.Eventing.Reader;
 using System.IO;
 
 namespace FBAPayaraD
@@ -11,6 +10,23 @@ namespace FBAPayaraD
         Users,
         Visits,
         ProposalLookup,
+    }
+
+    public static class ServiceExtensions {
+        private static readonly Dictionary<string, Service> ServiceNames =
+            new Dictionary<string, Service>
+        {
+            {"proposal-lookup", Service.ProposalLookup},
+            {"users-services", Service.Users},
+        };
+
+        public static Service FromWarName(string war)
+        {
+            var parts = war.Split("-war-");
+            if (ServiceNames.ContainsKey(parts[0])) return ServiceNames[parts[0]];
+
+            return (Service)Enum.Parse(typeof(Service), parts[0], true);
+        }
     }
 
     public class ServicesMap

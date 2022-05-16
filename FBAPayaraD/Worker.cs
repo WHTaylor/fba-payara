@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using static FBAPayaraD.ServiceExtensions;
 
 namespace FBAPayaraD
 {
@@ -49,7 +49,7 @@ namespace FBAPayaraD
                 var cmd = Command.Parse(input);
                 cmdOut = cmd.Type switch
                 {
-                    CommandType.List => await _asAdmin.ListApplications(),
+                    CommandType.List => await ListApplications(),
                     CommandType.Deploy => await Deploy(cmd.Arg),
                     CommandType.Undeploy => await Undeploy(cmd.Arg),
                     _ => CommandOutput.Successful("Coming Soon"),
@@ -67,13 +67,35 @@ namespace FBAPayaraD
             await StreamOutput(server, cmdOut);
         }
 
+        private async Task<CommandOutput> ListApplications()
+        {
+            var apps = await _asAdmin.ListApplications();
+            if (!apps.Success)
+            {
+                return CommandOutput.Failure("Couldn't get applications");
+            }
+
+            var deployedWars = apps.Value
+                .ToDictionary(a => a, FromWarName);
+            var results = new List<string>();
+            foreach (var (war, service) in deployedWars)
+            {
+                results.Add(_deploymentInfo.ContainsKey(service)
+                    ? _deploymentInfo[service].Serialize()
+                    : war);
+            }
+
+            return CommandOutput.Successful(results);
+        }
+
         private static async Task StreamOutput(
             Stream server, CommandOutput cmdOut)
         {
             var writer = new StreamWriter(server);
             writer.AutoFlush = true;
 
-            await writer.WriteAsync(string.Join("\n", cmdOut.Value));
+            var prefix = cmdOut.Success ? "" : "Error: ";
+            await writer.WriteAsync(prefix + string.Join("\n", cmdOut.Value));
         }
 
         private async Task<CommandOutput> Deploy(string serviceName)

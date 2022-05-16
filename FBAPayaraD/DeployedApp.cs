@@ -1,4 +1,5 @@
 ﻿using System;
+using static FBAPayaraD.ServiceExtensions;
 
 namespace FBAPayaraD
 {
@@ -35,7 +36,7 @@ namespace FBAPayaraD
         {
             var parts = war.Split("-war-");
             return new DeployedApp(
-                (Service)Enum.Parse(typeof(Service), parts[0], true),
+                FromWarName(war),
                 parts[1],
                 deployedTime);
         }

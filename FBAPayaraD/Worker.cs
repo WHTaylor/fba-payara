@@ -69,23 +69,44 @@ namespace FBAPayaraD
 
         private async Task<CommandOutput> ListApplications()
         {
-            var apps = await _asAdmin.ListApplications();
-            if (!apps.Success)
+            var appList = await _asAdmin.ListApplications();
+            if (!appList.Success)
             {
                 return CommandOutput.Failure("Couldn't get applications");
             }
 
-            var deployedWars = apps.Value
-                .ToDictionary(a => a, FromWarName);
-            var results = new List<string>();
-            foreach (var (war, service) in deployedWars)
+            if (appList.Value.Count == 0)
             {
-                results.Add(_deploymentInfo.ContainsKey(service)
-                    ? _deploymentInfo[service].Serialize()
-                    : war);
+                return CommandOutput.Successful("No applications deployed");
             }
 
-            return CommandOutput.Successful(results);
+            var deployedApps = appList.Value
+                .ToDictionary(a => a, FromWarName);
+            var appValues = new List<List<string>>();
+            foreach (var (war, service) in deployedApps)
+            {
+                var app = _deploymentInfo.ContainsKey(service)
+                    ? _deploymentInfo[service]
+                    : DeployedApp.FromWar(war);
+                appValues.Add(app.Values());
+            }
+
+            // Get the longest length for each of the value fields
+            var numValues = appValues[0].Count;
+            var longestValueLengths = Enumerable.Range(0, numValues)
+                .Select(i =>
+                    appValues.Select(r => r[i])
+                        .Max(v => v.Length)
+                ).ToList();
+            // Pad all value fields to be as long as the longest value across
+            // all the apps
+            var padded = appValues.Select(r =>
+                    string.Join(
+                        " ",
+                        r.Select((v, i) => v.PadRight(longestValueLengths[i]))))
+                .ToList();
+
+            return CommandOutput.Successful(padded);
         }
 
         private static async Task StreamOutput(

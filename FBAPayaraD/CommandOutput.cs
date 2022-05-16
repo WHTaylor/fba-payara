@@ -6,48 +6,39 @@ namespace FBAPayaraD
 {
     public class CommandOutput
     {
-        private readonly List<string> _outLines;
-        private readonly List<string> _errLines;
-        public bool WasSuccess => _errLines.Count == 0;
+        public readonly List<string> Value;
+        public readonly bool Success;
 
-        public string Output => string.Join("\n", WasSuccess
-            ? _outLines
-            : _errLines);
-
-        public List<string> Values => WasSuccess
-            ? _outLines
-            : _errLines;
-
-        private CommandOutput(List<string> outLines, List<string> errLines)
+        private CommandOutput(List<string> value, bool success)
         {
-            _outLines = outLines;
-            _errLines = errLines;
+            Value = value;
+            Success = success;
         }
 
-        public static CommandOutput Success(List<string> values)
+        public static CommandOutput Successful(List<string> values)
         {
-            return new CommandOutput(values, new List<string>());
+            return new CommandOutput(values, true);
         }
 
-        public static CommandOutput Success(string value)
+        public static CommandOutput Successful(string value)
         {
-            return new CommandOutput(new List<string> { value }, new List<string>());
+            return new CommandOutput(new List<string> { value }, true);
         }
 
         public static CommandOutput Failure(List<string> values)
         {
-            return new CommandOutput(new List<string>(), values);
+            return new CommandOutput(values, false);
         }
 
         public static CommandOutput Failure(string value)
         {
-            return new CommandOutput(new List<string>(), new List<string> { value });
+            return new CommandOutput(new List<string> { value }, false);
         }
 
         public CommandOutput Map(Func<string, string> f)
         {
-            return WasSuccess
-                ? new CommandOutput(_outLines.Select(f).ToList(), _errLines)
+            return Success
+                ? new CommandOutput(Value.Select(f).ToList(), Success)
                 : this;
         }
     }

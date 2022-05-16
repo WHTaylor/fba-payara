@@ -19,7 +19,7 @@ namespace FBAPayaraD
             {
                 StartInfo = new ProcessStartInfo(AsadminExe)
                 {
-                    Arguments = string.Join(" ", "--terse", "--interactive=true"),
+                    Arguments = string.Join(" ", "--interactive=true"),
                     RedirectStandardInput = true,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -115,22 +115,19 @@ namespace FBAPayaraD
 
         private async Task<CommandOutput> GetCommandOutput()
         {
-            Console.WriteLine("Getting output");
             var output = await ReadToPrompt();
-            return output.Count > 0
-                ? CommandOutput.Success(output)
-                : CommandOutput.Failure(await ReadErrors());
-        }
+            if (output.Count == 0) return CommandOutput.Failure("No output");
 
-        private async Task<List<string>> ReadErrors()
-        {
-            List<string> errs = new();
-            while (_asAdminProc.StandardError.Peek() != -1)
-            {
-                errs.Add(await _asAdminProc.StandardError.ReadLineAsync());
-            }
+            var success = output[^1].Trim().StartsWith("Command")
+                          && output[^1].Trim().EndsWith("successfully.");
+            var returnOutput = output
+                .Take(output.Count - 1)
+                .Select(s => s.Trim())
+                .ToList();
 
-            return errs;
+            return success
+                ? CommandOutput.Successful(returnOutput)
+                : CommandOutput.Failure(returnOutput);
         }
     }
 }

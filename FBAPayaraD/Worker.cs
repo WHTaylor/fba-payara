@@ -52,16 +52,16 @@ namespace FBAPayaraD
                     CommandType.List => await _asAdmin.ListApplications(),
                     CommandType.Deploy => await Deploy(cmd.Arg),
                     CommandType.Undeploy => await Undeploy(cmd.Arg),
-                    _ => CommandOutput.Success("Coming Soon"),
+                    _ => CommandOutput.Successful("Coming Soon"),
                 };
             }
             catch (ArgumentException ex)
             {
                 cmdOut = CommandOutput.Failure(ex.Message);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                cmdOut = CommandOutput.Failure("Internal error");
+                cmdOut = CommandOutput.Failure($"Internal error '{ex.Message}");
             }
 
             await StreamOutput(server, cmdOut);
@@ -73,7 +73,7 @@ namespace FBAPayaraD
             var writer = new StreamWriter(server);
             writer.AutoFlush = true;
 
-            await writer.WriteAsync(cmdOut.Output);
+            await writer.WriteAsync(string.Join("\n", cmdOut.Value));
         }
 
         private async Task<CommandOutput> Deploy(string serviceName)
@@ -86,7 +86,7 @@ namespace FBAPayaraD
 
             var warPath = ServicesMap.ServiceWar(serviceName);
             var result = await _asAdmin.Deploy(warPath);
-            if (result.WasSuccess)
+            if (result.Success)
             {
                 var war = new FileInfo(warPath).Name;
                 var deployment = DeployedApp.FromWar(war, DateTime.Now);
@@ -106,15 +106,20 @@ namespace FBAPayaraD
             }
 
             var appsList = await _asAdmin.ListApplications();
-            if (!appsList.WasSuccess)
+            if (!appsList.Success)
             {
-                return appsList;
+                return CommandOutput.Failure("Couldn't get applications");
             }
 
-            var warPath = appsList.Values
-                .First(a => a.Contains(serviceName.ToLower()));
+            var warPath = appsList.Value
+                .FirstOrDefault(a => a.Contains(serviceName.ToLower()));
+            if (warPath == null)
+            {
+                return CommandOutput.Failure($"{serviceName} is not deployed");
+            }
+
             var result = await _asAdmin.Undeploy(warPath);
-            if (result.WasSuccess)
+            if (result.Success)
             {
                 var war = new FileInfo(warPath).Name;
                 var deployment = DeployedApp.FromWar(war, DateTime.Now);

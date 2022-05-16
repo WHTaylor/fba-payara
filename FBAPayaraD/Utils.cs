@@ -1,16 +1,44 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
 
 namespace FBAPayaraD
 {
     public static class Utils
     {
-        public static string Capitalized(this string word)
+        private static readonly string AppDataDir =
+            Environment.GetFolderPath(
+                Environment.SpecialFolder.LocalApplicationData);
+
+        private static readonly string SaveFile =
+            Path.Join(AppDataDir, "fba-payara", "data");
+
+        public static void SaveDeploymentInfo(List<DeployedApp> apps)
         {
-            if (word.Length == 0) return word;
-            var lowered = word.ToLower();
-            return lowered[0].ToString().ToUpper()
-                .Concat(lowered[1..])
-                .ToString();
+            Console.WriteLine(SaveFile);
+            if (!File.Exists(SaveFile))
+            {
+                Console.WriteLine("Creating");
+                var dir = Directory.GetParent(SaveFile);
+                Console.WriteLine(dir);
+                Directory.CreateDirectory(dir.FullName);
+                Console.WriteLine("Created dir");
+            }
+
+            File.WriteAllLines(
+                SaveFile,
+                apps.Select(app => app.Serialize()).ToArray());
+        }
+
+        public static Dictionary<Service, DeployedApp> LoadDeploymentInfo()
+        {
+            if (!File.Exists(SaveFile)) return new();
+
+            return File.ReadLines(SaveFile)
+                .Select(DeployedApp.Deserialize)
+                .ToDictionary(a => a.service, a => a);
         }
     }
 }

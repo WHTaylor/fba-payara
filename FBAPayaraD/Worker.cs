@@ -86,7 +86,7 @@ namespace FBAPayaraD
             {
                 var app = _deploymentInfo.ContainsKey(service)
                     ? _deploymentInfo[service]
-                    : Deployment.FromWar(war);
+                    : new DeploymentBuilder().FromWar(war).Build();
                 appValues.Add(app.Values());
             }
 
@@ -128,13 +128,15 @@ namespace FBAPayaraD
 
             var warPath = Services.NameToWar(serviceName);
             var result = await _asAdmin.Deploy(warPath);
-            var repo = Services.NameToRepo(serviceName);
             if (result.Success)
             {
                 var war = new FileInfo(warPath).Name;
-                var deployment = Deployment.FromWar(war, DateTime.Now);
-                deployment.repoBranch = repo.Branch();
-                _deploymentInfo[deployment.service] = deployment;
+                var deployment = new DeploymentBuilder()
+                    .FromWar(war)
+                    .AtTime(DateTime.Now)
+                    .ForRepo(Services.NameToRepo(serviceName))
+                    .Build();
+                _deploymentInfo[deployment.Service] = deployment;
                 Utils.SaveDeploymentInfo(_deploymentInfo.Values.ToList());
             }
 
@@ -166,8 +168,7 @@ namespace FBAPayaraD
             if (result.Success)
             {
                 var war = new FileInfo(warPath).Name;
-                var deployment = Deployment.FromWar(war, DateTime.Now);
-                _deploymentInfo.Remove(deployment.service);
+                _deploymentInfo.Remove(Services.WarToService(war));
                 Utils.SaveDeploymentInfo(_deploymentInfo.Values.ToList());
             }
 

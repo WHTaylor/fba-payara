@@ -38,7 +38,7 @@ namespace FBAPayaraD
 
             return File.ReadLines(SaveFile)
                 .Select(Deployment.Deserialize)
-                .ToDictionary(a => a.service, a => a);
+                .ToDictionary(a => a.Service, a => a);
         }
     }
 }

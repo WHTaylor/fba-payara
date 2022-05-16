@@ -12,12 +12,12 @@ namespace FBAPayaraD
         ProposalLookup,
     }
 
-    public static class ServiceExtensions {
-        private static readonly Dictionary<string, Service> ServiceNames =
-            new Dictionary<string, Service>
+    public static class ServiceExtensions
+    {
+        private static readonly Dictionary<string, Service> ServiceNames = new()
         {
-            {"proposal-lookup", Service.ProposalLookup},
-            {"users-services", Service.Users},
+            { "proposal-lookup", Service.ProposalLookup },
+            { "users-services", Service.Users },
         };
 
         public static Service FromWarName(string war)
@@ -33,20 +33,28 @@ namespace FBAPayaraD
     {
         private static readonly string AppsRootDir =
             Path.Combine("C:", "Users", "rop61488", "Documents", "Apps");
-            // TODO: Environment
-            //.GetEnvironmentVariable("APPS_HOME_DIR");
+        // TODO: Environment
+        //.GetEnvironmentVariable("APPS_HOME_DIR");
 
         private static readonly Dictionary<Service, string> TargetDirectories =
             new()
             {
-                { Service.Schedule, Path.Combine(
-                    "Schedule", "SchedulePackage", "war") },
-                { Service.Users, Path.Combine(
-                    "Users", "users", "users-services-war") },
-                { Service.Visits, Path.Combine(
-                    "Visits", "VisitsPackage", "visits-war") },
-                { Service.ProposalLookup, Path.Combine(
-                    "Schedule", "proposal-lookup", "proposal-lookup-war") },
+                {
+                    Service.Schedule, Path.Combine(
+                        "Schedule", "SchedulePackage", "war")
+                },
+                {
+                    Service.Users, Path.Combine(
+                        "Users", "users", "users-services-war")
+                },
+                {
+                    Service.Visits, Path.Combine(
+                        "Visits", "VisitsPackage", "visits-war")
+                },
+                {
+                    Service.ProposalLookup, Path.Combine(
+                        "Schedule", "proposal-lookup", "proposal-lookup-war")
+                },
             };
 
         public static string ServiceWar(string serviceName)

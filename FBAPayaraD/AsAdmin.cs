@@ -39,30 +39,30 @@ namespace FBAPayaraD
             _asAdminProc.StandardOutput.Read(buf, 0, _prompt.Count);
         }
 
-        public async Task<CommandOutput> ListApplications()
+        public CommandOutput ListApplications()
         {
-            await _asAdminProc.StandardInput.WriteLineAsync("list-applications");
-            var output = await GetCommandOutput();
+            _asAdminProc.StandardInput.WriteLine("list-applications");
+            var output = GetCommandOutput();
             return output.Map(line => line.Split().First());
         }
 
-        public async Task<CommandOutput> Deploy(string war)
+        public CommandOutput Deploy(string war)
         {
             Console.WriteLine($"Deploying {war}");
-            await _asAdminProc.StandardInput.WriteLineAsync($"deploy {war}");
-            return await GetCommandOutput();
+            _asAdminProc.StandardInput.WriteLine($"deploy {war}");
+            return GetCommandOutput();
         }
 
-        public async Task<CommandOutput> Undeploy(string war)
+        public CommandOutput Undeploy(string war)
         {
             Console.WriteLine($"Undeploying {war}");
-            await _asAdminProc.StandardInput.WriteLineAsync($"undeploy {war}");
-            return await GetCommandOutput();
+            _asAdminProc.StandardInput.WriteLine($"undeploy {war}");
+            return GetCommandOutput();
         }
 
-        private async Task<CommandOutput> GetCommandOutput()
+        private CommandOutput GetCommandOutput()
         {
-            var output = await ReadToPrompt();
+            var output = ReadToPrompt();
             if (output.Count == 0) return CommandOutput.Failure("No output");
 
             var success = output[^1].Trim().StartsWith("Command")
@@ -80,7 +80,7 @@ namespace FBAPayaraD
         private readonly List<char> _prompt = new()
             { 'a', 's', 'a', 'd', 'm', 'i', 'n', '>', ' ' };
 
-        private async Task<List<string>> ReadToPrompt()
+        private List<string> ReadToPrompt()
         {
             var stdout = _asAdminProc.StandardOutput;
             var lines = new List<string>();
@@ -89,7 +89,7 @@ namespace FBAPayaraD
             {
                 if (stdout.Peek() != -1 && stdout.Peek() != 'a')
                 {
-                    lines.Add(await stdout.ReadLineAsync());
+                    lines.Add(stdout.ReadLine());
                 }
                 // If the line starts with 'a', it might be the prompt.
                 // Because the prompt doesn't end with a newline, we need to

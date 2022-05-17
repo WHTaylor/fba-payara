@@ -32,14 +32,14 @@ namespace FBAPayaraD
                 await using var server = new NamedPipeServerStream(
                     "fba-payarad", PipeDirection.InOut);
                 await server.WaitForConnectionAsync(stoppingToken);
-                await HandleConnection(server);
+                HandleConnection(server);
             }
         }
 
-        private async Task HandleConnection(Stream server)
+        private void HandleConnection(Stream server)
         {
             var reader = new StreamReader(server);
-            var input = await reader.ReadLineAsync();
+            var input = reader.ReadLine();
             _logger.LogInformation(input);
 
             CommandOutput cmdOut;
@@ -48,10 +48,10 @@ namespace FBAPayaraD
                 var cmd = Command.Parse(input);
                 cmdOut = cmd.Type switch
                 {
-                    CommandType.List => await ListApplications(),
-                    CommandType.Deploy => await Deploy(cmd.Arg),
-                    CommandType.Undeploy => await Undeploy(cmd.Arg),
-                    CommandType.Redeploy => await Redeploy(cmd.Arg),
+                    CommandType.List => ListApplications(),
+                    CommandType.Deploy => Deploy(cmd.Arg),
+                    CommandType.Undeploy => Undeploy(cmd.Arg),
+                    CommandType.Redeploy => Redeploy(cmd.Arg),
                     _ => CommandOutput.Successful("Coming Soon"),
                 };
             }
@@ -64,12 +64,12 @@ namespace FBAPayaraD
                 cmdOut = CommandOutput.Failure($"Internal error '{ex.Message}");
             }
 
-            await StreamOutput(server, cmdOut);
+            StreamOutput(server, cmdOut);
         }
 
-        private async Task<CommandOutput> ListApplications()
+        private CommandOutput ListApplications()
         {
-            var appList = await _asAdmin.ListApplications();
+            var appList = _asAdmin.ListApplications();
             if (!appList.Success)
             {
                 return CommandOutput.Failure("Couldn't get applications");
@@ -109,17 +109,17 @@ namespace FBAPayaraD
             return CommandOutput.Successful(padded);
         }
 
-        private static async Task StreamOutput(
+        private static void StreamOutput(
             Stream server, CommandOutput cmdOut)
         {
             var writer = new StreamWriter(server);
             writer.AutoFlush = true;
 
             var prefix = cmdOut.Success ? "" : "Error: ";
-            await writer.WriteAsync(prefix + string.Join("\n", cmdOut.Value));
+            writer.Write(prefix + string.Join("\n", cmdOut.Value));
         }
 
-        private async Task<CommandOutput> Deploy(string serviceName)
+        private CommandOutput Deploy(string serviceName)
         {
             if (!Services.IsValidName(serviceName))
             {
@@ -128,7 +128,7 @@ namespace FBAPayaraD
             }
 
             var warPath = Services.NameToWar(serviceName);
-            var result = await _asAdmin.Deploy(warPath);
+            var result = _asAdmin.Deploy(warPath);
             if (result.Success)
             {
                 var war = new FileInfo(warPath).Name;
@@ -144,7 +144,7 @@ namespace FBAPayaraD
             return result;
         }
 
-        private async Task<CommandOutput> Undeploy(string serviceName)
+        private CommandOutput Undeploy(string serviceName)
         {
             if (!Services.IsValidName(serviceName))
             {
@@ -152,7 +152,7 @@ namespace FBAPayaraD
                     $"{serviceName} is not a known service");
             }
 
-            var appsList = await _asAdmin.ListApplications();
+            var appsList = _asAdmin.ListApplications();
             if (!appsList.Success)
             {
                 return CommandOutput.Failure("Couldn't get applications");
@@ -165,7 +165,7 @@ namespace FBAPayaraD
                 return CommandOutput.Failure($"{serviceName} is not deployed");
             }
 
-            var result = await _asAdmin.Undeploy(warPath);
+            var result = _asAdmin.Undeploy(warPath);
             if (result.Success)
             {
                 var war = new FileInfo(warPath).Name;
@@ -176,9 +176,9 @@ namespace FBAPayaraD
             return result;
         }
 
-        private async Task<CommandOutput> Redeploy(string serviceName)
+        private CommandOutput Redeploy(string serviceName)
         {
-            var undeploy = await Undeploy(serviceName);
+            var undeploy = Undeploy(serviceName);
             if (!undeploy.Success
                 && undeploy.Value.FirstOrDefault() !=
                 $"{serviceName} is not deployed")
@@ -186,7 +186,7 @@ namespace FBAPayaraD
                 return undeploy;
             }
 
-            return await Deploy(serviceName);
+            return Deploy(serviceName);
         }
     }
 }

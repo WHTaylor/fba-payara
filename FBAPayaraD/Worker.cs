@@ -51,6 +51,7 @@ namespace FBAPayaraD
                     CommandType.List => await ListApplications(),
                     CommandType.Deploy => await Deploy(cmd.Arg),
                     CommandType.Undeploy => await Undeploy(cmd.Arg),
+                    CommandType.Redeploy => await Redeploy(cmd.Arg),
                     _ => CommandOutput.Successful("Coming Soon"),
                 };
             }
@@ -173,6 +174,19 @@ namespace FBAPayaraD
             }
 
             return result;
+        }
+
+        private async Task<CommandOutput> Redeploy(string serviceName)
+        {
+            var undeploy = await Undeploy(serviceName);
+            if (!undeploy.Success
+                && undeploy.Value.FirstOrDefault() !=
+                $"{serviceName} is not deployed")
+            {
+                return undeploy;
+            }
+
+            return await Deploy(serviceName);
         }
     }
 }

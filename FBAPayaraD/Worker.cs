@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipes;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
@@ -41,17 +40,20 @@ namespace FBAPayaraD
             var input = new StreamReader(server).ReadLine();
             _logger.LogInformation(input);
 
+            var writer = new StreamWriter(server);
             var runner = new CommandRunner(
-                new StreamWriter(server),
+                writer,
                 _asAdmin,
                 ref _deploymentInfo);
-            runner.StreamOutput(
-                Try<Command>.TryTo(() => Command.Parse(input))
+
+            Try<Command>
+                .TryTo(() => Command.Parse(input))
                 .Map(cmd => runner.Run(cmd))
                 .RecoverFrom(
                     typeof(ArgumentException),
                     () => CommandOutput.Failure("asdf"))
-                .Get());
+                .Get()
+                .StreamOutput(writer);
         }
     }
 }

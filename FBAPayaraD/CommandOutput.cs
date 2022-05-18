@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace FBAPayaraD
@@ -43,5 +44,14 @@ namespace FBAPayaraD
         }
 
         public void Add(string s) => Value.Add(s);
+
+        public void StreamOutput(StreamWriter stream)
+        {
+            if (!Success) stream.Write("Error: ");
+            foreach (var line in Value)
+            {
+                stream.WriteLine(line);
+            }
+        }
     }
 }

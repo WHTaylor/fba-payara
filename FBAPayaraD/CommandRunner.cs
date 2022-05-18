@@ -76,15 +76,6 @@ public class CommandRunner
         return CommandOutput.Successful(padded);
     }
 
-    public void StreamOutput(CommandOutput cmdOut)
-    {
-        if (!cmdOut.Success) _output.Write("Error: ");
-        foreach (var line in cmdOut.Value)
-        {
-            _output.WriteLine(line);
-        }
-    }
-
     private CommandOutput Deploy(string serviceName)
     {
         if (!Services.IsValidName(serviceName))
@@ -155,7 +146,7 @@ public class CommandRunner
         {
             return undeploy;
         }
-        StreamOutput(undeploy);
+        undeploy.StreamOutput(_output);
 
         return Deploy(serviceName);
     }

@@ -17,7 +17,10 @@ namespace FBAPayara
             writer.WriteLine(string.Join(" ", args));
 
             var reader = new StreamReader(client);
-            Console.WriteLine(reader.ReadToEnd());
+            while (reader.ReadLine() is { } output)
+            {
+                Console.WriteLine(output);
+            }
         }
     }
 }

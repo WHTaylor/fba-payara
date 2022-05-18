@@ -78,8 +78,11 @@ public class CommandRunner
 
     public void StreamOutput(CommandOutput cmdOut)
     {
-        var prefix = cmdOut.Success ? "" : "Error: ";
-        _output.Write(prefix + string.Join("\n", cmdOut.Value));
+        if (!cmdOut.Success) _output.Write("Error: ");
+        foreach (var line in cmdOut.Value)
+        {
+            _output.WriteLine(line);
+        }
     }
 
     private CommandOutput Deploy(string serviceName)
@@ -136,6 +139,10 @@ public class CommandRunner
             Utils.SaveDeploymentInfo(_deploymentInfo.Values.ToList());
         }
 
+        // Undeploy doesn't output anything, unlike other commands, so give
+        // some indication of success.
+        result.Add($"Successfully undeployed {serviceName}");
+
         return result;
     }
 
@@ -148,6 +155,7 @@ public class CommandRunner
         {
             return undeploy;
         }
+        StreamOutput(undeploy);
 
         return Deploy(serviceName);
     }

@@ -41,5 +41,7 @@ namespace FBAPayaraD
                 ? new CommandOutput(Value.Select(f).ToList(), Success)
                 : this;
         }
+
+        public void Add(string s) => Value.Add(s);
     }
 }

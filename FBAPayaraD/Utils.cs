@@ -17,14 +17,10 @@ namespace FBAPayaraD
 
         public static void SaveDeploymentInfo(List<Deployment> apps)
         {
-            Console.WriteLine(SaveFile);
             if (!File.Exists(SaveFile))
             {
-                Console.WriteLine("Creating");
                 var dir = Directory.GetParent(SaveFile);
-                Console.WriteLine(dir);
                 Directory.CreateDirectory(dir.FullName);
-                Console.WriteLine("Created dir");
             }
 
             File.WriteAllLines(

@@ -15,12 +15,12 @@ namespace FBAPayara.Shared
 
         public static Command Parse(string cmdString)
         {
-            var words = cmdString.Split();
-            if (words.Length == 0)
+            if (string.IsNullOrEmpty(cmdString))
             {
                 throw new ArgumentException("Need a command");
             }
 
+            var words = cmdString.Trim().Split();
             if (!Enum.TryParse(
                     typeof(CommandType),
                     words[0],

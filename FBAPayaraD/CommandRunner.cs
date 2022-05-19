@@ -7,9 +7,9 @@ namespace FBAPayaraD;
 
 public class CommandRunner
 {
-    private StreamWriter _output;
-    private AsAdmin _asAdmin;
-    private Dictionary<Service, Deployment> _deploymentInfo;
+    private readonly StreamWriter _output;
+    private readonly AsAdmin _asAdmin;
+    private readonly Dictionary<Service, Deployment> _deploymentInfo;
 
     public CommandRunner(
         StreamWriter output,
@@ -42,38 +42,10 @@ public class CommandRunner
             return CommandOutput.Failure("Couldn't get applications");
         }
 
-        if (appList.Value.Count == 0)
-        {
-            return CommandOutput.Successful("No applications deployed");
-        }
-
-        var deployedApps = appList.Value
-            .ToDictionary(a => a, Services.WarToService);
-        var appValues = new List<List<string>>();
-        foreach (var (war, service) in deployedApps)
-        {
-            var app = _deploymentInfo.ContainsKey(service)
-                ? _deploymentInfo[service]
-                : new DeploymentBuilder().FromWar(war).Build();
-            appValues.Add(app.Values());
-        }
-
-        // Get the longest length for each of the value fields
-        var numValues = appValues[0].Count;
-        var longestValueLengths = Enumerable.Range(0, numValues)
-            .Select(i =>
-                appValues.Select(r => r[i])
-                    .Max(v => v.Length)
-            ).ToList();
-        // Pad all value fields to be as long as the longest value across
-        // all the apps
-        var padded = appValues.Select(r =>
-                string.Join(
-                    " ",
-                    r.Select((v, i) => v.PadRight(longestValueLengths[i]))))
-            .ToList();
-
-        return CommandOutput.Successful(padded);
+        return appList.Value.Count == 0
+            ? CommandOutput.Successful("No applications deployed")
+            : CommandOutput.Successful(
+               Utils.FormatDeploymentOutput(appList.Value, _deploymentInfo));
     }
 
     private CommandOutput Deploy(string serviceName)

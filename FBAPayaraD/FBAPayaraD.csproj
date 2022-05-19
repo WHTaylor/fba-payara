@@ -8,6 +8,10 @@
 
     <ItemGroup>
         <PackageReference Include="GitWrapper" Version="1.0.2" />
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\FBAPayara.Shared\FBAPayara.Shared.csproj" />
     </ItemGroup>
 </Project>

@@ -1,14 +1,13 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
-namespace FBAPayaraD
+namespace FBAPayara.Shared
 {
     public class Command
     {
         public readonly CommandType Type;
-        public readonly string Arg;
+        public readonly string? Arg;
 
-        private Command(CommandType type, string arg)
+        private Command(CommandType type, string? arg)
         {
             Type = type;
             Arg = arg;

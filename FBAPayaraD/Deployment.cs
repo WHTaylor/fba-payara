@@ -27,7 +27,17 @@ namespace FBAPayaraD
         }
 
         public string Serialize() =>
-            $"{Service},{_version}, {_deployTime:u},{_repoBranch},{_repoCommit}";
+            $"{Service},{_version}, {_deployTime.ToString()},{_repoBranch},{_repoCommit}";
+
+        public static Deployment Deserialize(string serialized)
+        {
+            var parts = serialized.Split(",");
+            return new Deployment(
+                (Service)Enum.Parse(typeof(Service), parts[0], true),
+                parts[1],
+                DateTime.Parse(parts[2]),
+                parts[3]);
+        }
 
         public List<string> Values()
         {
@@ -43,16 +53,6 @@ namespace FBAPayaraD
                 _deployTime?.ToString("u") ?? "",
                 repoValue,
             };
-        }
-
-        public static Deployment Deserialize(string serialized)
-        {
-            var parts = serialized.Split(",");
-            return new Deployment(
-                (Service)Enum.Parse(typeof(Service), parts[0], true),
-                parts[1],
-                DateTime.Parse(parts[2]),
-                parts[3]);
         }
     }
 

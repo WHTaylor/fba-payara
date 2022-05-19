@@ -42,8 +42,9 @@ namespace FBAPayaraD
         public CommandOutput ListApplications()
         {
             _asAdminProc.StandardInput.WriteLine("list-applications");
-            var output = GetCommandOutput();
-            return output.Map(line => line.Split().First());
+            return GetCommandOutput()
+                // Only include the names of the wars
+                .Map(line => line.Split().First());
         }
 
         public CommandOutput Deploy(string war)

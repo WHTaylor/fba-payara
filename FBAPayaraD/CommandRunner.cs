@@ -36,16 +36,16 @@ public class CommandRunner
 
     private CommandOutput ListApplications()
     {
-        var appList = _asAdmin.ListApplications();
-        if (!appList.Success)
+        var deployedWars = _asAdmin.ListApplications();
+        if (!deployedWars.Success)
         {
             return CommandOutput.Failure("Couldn't get applications");
         }
 
-        return appList.Value.Count == 0
+        return deployedWars.Value.Count == 0
             ? CommandOutput.Successful("No applications deployed")
             : CommandOutput.Successful(
-               Utils.FormatDeploymentOutput(appList.Value, _deploymentInfo));
+               Utils.FormatDeploymentOutput(deployedWars.Value, _deploymentInfo));
     }
 
     private CommandOutput Deploy(string serviceName)
@@ -82,13 +82,13 @@ public class CommandRunner
                 $"{serviceName} is not a known service");
         }
 
-        var appsList = _asAdmin.ListApplications();
-        if (!appsList.Success)
+        var deployedWars = _asAdmin.ListApplications();
+        if (!deployedWars.Success)
         {
             return CommandOutput.Failure("Couldn't get applications");
         }
 
-        var warPath = appsList.Value
+        var warPath = deployedWars.Value
             .FirstOrDefault(a => a.Contains(serviceName.ToLower()));
         if (warPath == null)
         {
@@ -114,6 +114,7 @@ public class CommandRunner
     {
         var undeploy = Undeploy(serviceName);
         if (!undeploy.Success
+            // This is like stringly typed exception handling...
             && undeploy.Value.FirstOrDefault() !=
             $"{serviceName} is not deployed")
         {

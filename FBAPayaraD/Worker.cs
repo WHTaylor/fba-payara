@@ -51,7 +51,7 @@ namespace FBAPayaraD
                 .Map(cmd => runner.Run(cmd))
                 .RecoverFrom(
                     typeof(ArgumentException),
-                    () => CommandOutput.Failure($"{input} is not a valid command"))
+                    e => CommandOutput.Failure(e.Message))
                 .Get()
                 .StreamOutput(writer);
         }

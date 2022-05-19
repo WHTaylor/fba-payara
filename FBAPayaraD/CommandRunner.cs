@@ -85,6 +85,7 @@ public class CommandRunner
         }
 
         var warPath = Services.NameToWar(serviceName);
+        _output.WriteLine($"Deploying {warPath}. May take up to a minute.");
         var result = _asAdmin.Deploy(warPath);
         if (result.Success)
         {

@@ -32,15 +32,9 @@ namespace FBAPayaraD
         private static readonly Dictionary<Service, string> TargetDirectories =
             new()
             {
-                {
-                    Service.Schedule, Path.Combine("SchedulePackage", "war")
-                },
-                {
-                    Service.Users, Path.Combine("users", "users-services-war")
-                },
-                {
-                    Service.Visits, Path.Combine("VisitsPackage", "visits-war")
-                },
+                { Service.Schedule, Path.Combine("SchedulePackage", "war") },
+                { Service.Users, Path.Combine("users", "users-services-war") },
+                { Service.Visits, Path.Combine("VisitsPackage", "visits-war") },
                 {
                     Service.ProposalLookup, Path.Combine(
                         "proposal-lookup", "proposal-lookup-war")

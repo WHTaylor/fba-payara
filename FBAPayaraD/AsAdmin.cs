@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.Eventing.Reader;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace FBAPayaraD
 {
@@ -12,6 +12,9 @@ namespace FBAPayaraD
 
         private const string AsadminExe =
             "C:/payara/installations/payara-4.1.2.181/payara41/bin/asadmin.bat";
+
+        private readonly List<char> _prompt = new()
+            { 'a', 's', 'a', 'd', 'm', 'i', 'n', '>', ' ' };
 
         public AsAdmin()
         {
@@ -73,13 +76,15 @@ namespace FBAPayaraD
                 .Select(s => s.Trim())
                 .ToList();
 
+            if (!success)
+            {
+                returnOutput = returnOutput.Concat(ReadStdErr()).ToList();
+            }
+
             return success
                 ? CommandOutput.Successful(returnOutput)
                 : CommandOutput.Failure(returnOutput);
         }
-
-        private readonly List<char> _prompt = new()
-            { 'a', 's', 'a', 'd', 'm', 'i', 'n', '>', ' ' };
 
         private List<string> ReadToPrompt()
         {
@@ -128,6 +133,19 @@ namespace FBAPayaraD
                 }
             }
 
+            return lines;
+        }
+
+        private IEnumerable<string> ReadStdErr()
+        {
+            List<string> lines = new();
+            while (_asAdminProc.StandardError.Peek() > 0)
+            {
+                lines.Add(_asAdminProc.StandardError.ReadLine());
+            }
+            // Need to discard the end marker so that next read doesn't
+            // immediately quit
+            _asAdminProc.StandardError.DiscardBufferedData();
             return lines;
         }
     }

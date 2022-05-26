@@ -36,7 +36,8 @@ namespace FBAPayaraD
                 (Service)Enum.Parse(typeof(Service), parts[0], true),
                 parts[1],
                 DateTime.Parse(parts[2]),
-                parts[3]);
+                parts[3],
+                parts[4]);
         }
 
         public List<string> Values()
@@ -44,7 +45,7 @@ namespace FBAPayaraD
             var repoValue = _repoBranch ?? "";
             repoValue += string.IsNullOrEmpty(_repoCommit)
                 ? ""
-                : $"({_repoCommit})";
+                : $" ({_repoCommit})";
 
             return new()
             {

@@ -77,13 +77,9 @@ public class CommandRunner
 
     private CommandOutput Undeploy(string serviceName)
     {
-        if (!Services.TryNameToService(serviceName, out var service))
-        {
-            throw new ArgumentException(
-                $"{serviceName} is not a known service");
-        }
-
-        return Undeploy(service);
+        return Services.TryNameToService(serviceName, out var service)
+            ? Undeploy(service)
+            : CommandOutput.Failure($"{serviceName} is not a known service");
     }
 
     private CommandOutput Undeploy(Service service)

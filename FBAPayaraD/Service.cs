@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using GitWrapper;
 
 namespace FBAPayaraD
@@ -11,6 +12,11 @@ namespace FBAPayaraD
         Users,
         Visits,
         ProposalLookup,
+    }
+
+    public static class ServiceExtensions
+    {
+        public static string DisplayName(this Service s) => s.ToString();
     }
 
     public static class Services
@@ -42,18 +48,33 @@ namespace FBAPayaraD
             };
 
         // Services whose war files are named differently to the enum
-        private static readonly Dictionary<string, Service> WarServices = new()
-        {
-            { "proposal-lookup", Service.ProposalLookup },
-            { "users-services", Service.Users },
-        };
+        private static readonly Dictionary<string, Service> WarPrefixServices =
+            new()
+            {
+                { "proposal-lookup", Service.ProposalLookup },
+                { "users-services", Service.Users },
+            };
 
-        public static Service NameToService(string s)
-            => (Service)Enum.Parse(typeof(Service), s, true);
+        private static readonly Dictionary<Service, string> ServiceWarPrefixes =
+            WarPrefixServices.ToDictionary(kv => kv.Value, kv => kv.Key);
 
-        public static string NameToWar(string serviceName)
+        public static bool TryNameToService(
+            string serviceName,
+            out Service service)
         {
-            var service = NameToService(serviceName);
+            return Enum.TryParse(serviceName.Replace("-", ""), true, out service);
+        }
+
+        private static Service NameToService(string s)
+            => (Service)Enum.Parse(typeof(Service), s.Replace("-", ""), true);
+
+        public static string ServiceToWarPrefix(Service s) =>
+            ServiceWarPrefixes.ContainsKey(s)
+                ? ServiceWarPrefixes[s]
+                : s.ToString().ToLower();
+
+        public static string ServiceToWar(Service service)
+        {
             var targetDir = Path.Join(
                 AppsRootDir,
                 RepoDirectories[service],
@@ -68,9 +89,9 @@ namespace FBAPayaraD
         public static Service WarToService(string war)
         {
             var parts = war.Split("-war-");
-            if (WarServices.ContainsKey(parts[0])) return WarServices[parts[0]];
-
-            return NameToService(parts[0]);
+            return WarPrefixServices.ContainsKey(parts[0])
+                ? WarPrefixServices[parts[0]]
+                : NameToService(parts[0]);
         }
 
         public static Git ServiceRepo(Service service) =>
@@ -78,10 +99,5 @@ namespace FBAPayaraD
 
         public static Git NameToRepo(string serviceName) =>
             ServiceRepo(NameToService(serviceName));
-
-        public static bool IsValidName(string name)
-        {
-            return Enum.TryParse(typeof(Service), name, true, out _);
-        }
     }
 }

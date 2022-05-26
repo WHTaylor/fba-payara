@@ -51,13 +51,13 @@ public class CommandRunner
 
     private CommandOutput Deploy(string serviceName)
     {
-        if (!Services.IsValidName(serviceName))
+        if (!Services.TryNameToService(serviceName, out var service))
         {
             throw new ArgumentException(
                 $"{serviceName} is not a known service");
         }
 
-        var warPath = Services.NameToWar(serviceName);
+        var warPath = Services.ServiceToWar(service);
         _output.WriteLine($"Deploying {warPath}. May take up to a minute.");
         var result = _asAdmin.Deploy(warPath);
         if (result.Success)
@@ -77,12 +77,17 @@ public class CommandRunner
 
     private CommandOutput Undeploy(string serviceName)
     {
-        if (!Services.IsValidName(serviceName))
+        if (!Services.TryNameToService(serviceName, out var service))
         {
             throw new ArgumentException(
                 $"{serviceName} is not a known service");
         }
 
+        return Undeploy(service);
+    }
+
+    private CommandOutput Undeploy(Service service)
+    {
         var deployedWars = _asAdmin.ListApplications();
         if (!deployedWars.Success)
         {
@@ -90,10 +95,10 @@ public class CommandRunner
         }
 
         var warPath = deployedWars.Value
-            .FirstOrDefault(a => a.Contains(serviceName.ToLower()));
+            .FirstOrDefault(a => a.Contains(Services.ServiceToWarPrefix(service)));
         if (warPath == null)
         {
-            return CommandOutput.Failure($"{serviceName} is not deployed");
+            return CommandOutput.Failure($"{service.DisplayName()} is not deployed");
         }
 
         var result = _asAdmin.Undeploy(warPath);
@@ -106,7 +111,7 @@ public class CommandRunner
 
         // Undeploy doesn't output anything, unlike other commands, so give
         // some indication of success.
-        result.Add($"Successfully undeployed {serviceName}");
+        result.Add($"Successfully undeployed {service.DisplayName()}");
 
         return result;
     }

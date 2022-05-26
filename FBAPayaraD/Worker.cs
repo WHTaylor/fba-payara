@@ -21,7 +21,6 @@ namespace FBAPayaraD
             _logger = logger;
             _asAdmin.Start();
             _deploymentInfo = Utils.LoadDeploymentInfo();
-            _logger.LogInformation(_deploymentInfo.Count.ToString());
         }
 
         protected override async Task ExecuteAsync(

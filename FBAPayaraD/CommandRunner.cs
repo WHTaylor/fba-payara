@@ -51,12 +51,7 @@ public class CommandRunner
 
     private CommandOutput Deploy(string serviceName)
     {
-        if (!Services.TryNameToService(serviceName, out var service))
-        {
-            throw new ArgumentException(
-                $"{serviceName} is not a known service");
-        }
-
+        var service = Services.ParseServiceName(serviceName);
         var warPath = Services.ServiceToWar(service);
         _output.WriteLine($"Deploying {warPath}. May take up to a minute.");
         var result = _asAdmin.Deploy(warPath);
@@ -66,7 +61,7 @@ public class CommandRunner
             var deployment = new DeploymentBuilder()
                 .FromWar(war)
                 .AtTime(DateTime.Now)
-                .ForRepo(Services.NameToRepo(serviceName))
+                .ForRepo(Services.ServiceRepo(service))
                 .Build();
             _deploymentInfo[deployment.Service] = deployment;
             Utils.SaveDeploymentInfo(_deploymentInfo.Values.ToList());
@@ -75,12 +70,8 @@ public class CommandRunner
         return result;
     }
 
-    private CommandOutput Undeploy(string serviceName)
-    {
-        return Services.TryNameToService(serviceName, out var service)
-            ? Undeploy(service)
-            : CommandOutput.Failure($"{serviceName} is not a known service");
-    }
+    private CommandOutput Undeploy(string serviceName) =>
+        Undeploy(Services.ParseServiceName(serviceName));
 
     private CommandOutput Undeploy(Service service)
     {

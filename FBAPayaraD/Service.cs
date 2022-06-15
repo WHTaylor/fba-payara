@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using GitWrapper;
+using PrefixMatch;
 
 namespace FBAPayaraD
 {
@@ -25,6 +26,8 @@ namespace FBAPayaraD
             Path.Combine("C:", "Users", "rop61488", "Documents", "Apps");
         // TODO: Environment
         //.GetEnvironmentVariable("APPS_HOME_DIR");
+        private static readonly PrefixMatcher ServiceNameMatcher = new(
+            Enum.GetNames<Service>().Select(s => s.ToLower()).ToList());
 
         private static readonly Dictionary<Service, string> RepoDirectories =
             new()
@@ -58,11 +61,24 @@ namespace FBAPayaraD
         private static readonly Dictionary<Service, string> ServiceWarPrefixes =
             WarPrefixServices.ToDictionary(kv => kv.Value, kv => kv.Key);
 
-        public static bool TryNameToService(
-            string serviceName,
-            out Service service)
+        public static Service ParseServiceName(string serviceName)
         {
-            return Enum.TryParse(serviceName.Replace("-", ""), true, out service);
+            var processedName = serviceName.Replace("-", "").ToLower();
+            var nameMatch = ServiceNameMatcher.Search(processedName);
+            switch (nameMatch.Type)
+            {
+                case ResultType.Success:
+                    return Enum.Parse<Service>(nameMatch.Word!, true);
+                case ResultType.NoMatch:
+                    throw new ArgumentException($"{serviceName} is not a known service");
+                case ResultType.NonUnique:
+                    var suggestions = string.Join("\n", nameMatch.Suggestions!);
+                    throw new ArgumentException($"{serviceName} is ambiguous. " +
+                                            $"Could be one of:\n{suggestions}");
+                default:
+                    // Unreachable
+                    throw new Exception("Failed to search for service");
+            }
         }
 
         private static Service NameToService(string s)
@@ -96,8 +112,5 @@ namespace FBAPayaraD
 
         public static Git ServiceRepo(Service service) =>
             new(Path.Join(AppsRootDir, RepoDirectories[service]));
-
-        public static Git NameToRepo(string serviceName) =>
-            ServiceRepo(NameToService(serviceName));
     }
 }

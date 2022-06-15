@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+﻿using PrefixMatch;
 
 namespace FBAPayara.Shared
 {
@@ -6,6 +6,9 @@ namespace FBAPayara.Shared
     {
         public readonly CommandType Type;
         public readonly string? Arg;
+
+        private static readonly PrefixMatcher CommandTypeMatcher = new(
+            Enum.GetNames<CommandType>().Select(t => t.ToLower()).ToList());
 
         private Command(CommandType type, string? arg)
         {
@@ -21,19 +24,24 @@ namespace FBAPayara.Shared
             }
 
             var words = cmdString.Trim().Split();
-            if (!Enum.TryParse(
-                    typeof(CommandType),
-                    words[0],
-                    true,
-                    out var type))
-                throw new ArgumentException($"{words[0]} is not a valid command");
+            var commandMatch = CommandTypeMatcher.Search(words[0].ToLower());
 
-            Debug.Assert(type != null, nameof(type) + " != null");
-            var ctype = (CommandType)type;
-            return ctype switch
+            if (commandMatch.Type == ResultType.NoMatch)
             {
-                CommandType.List => new Command(ctype, null),
-                _ => RequireArg(ctype, words),
+                throw new ArgumentException($"{words[0]} is not a valid command");
+            }
+            else if (commandMatch.Type == ResultType.NonUnique)
+            {
+                var suggestions = string.Join("\n", commandMatch.Suggestions!);
+                throw new ArgumentException($"{words[0]} is ambiguous. " +
+                                            $"Could be one of:\n{suggestions}");
+            }
+
+            var type = Enum.Parse<CommandType>(commandMatch.Word!, true);
+            return type switch
+            {
+                CommandType.List => new Command(type, null),
+                _ => RequireArg(type, words),
             };
         }
 
